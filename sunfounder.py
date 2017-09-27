@@ -108,10 +108,10 @@ if __name__ == '__main__':
 		counter=0
 
 		while True:
-			time.sleep(0.1)
 			start=time.time()
 			g=gyroMeasurement.gyro()
-			print('{}, {}, {}, {}, {}'.format(start, g['x'], g['y'], g['z'], distanceMeasurement.entfernung()), file=f)
+			a=gyroMeasurement.accel()
+			print('{}, {}, {}, {}, {}, {}, {}, {}'.format(start, g['x'], g['y'], g['z'], a['x'], a['y'], a['z'], distanceMeasurement.entfernung()), file=f)
 			counter=counter+1
 			print(counter)
 
