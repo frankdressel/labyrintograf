@@ -2,13 +2,22 @@
 <html>
     <head>
         <title>WebSocket demo</title>
+	<script src="https://d3js.org/d3.v4.min.js"></script>
     </head>
     <body>
+
+	<svg width="720" height="720">
+
         <script>
 	var ws = new WebSocket("ws://raspberrypiMaster:5678/");
+	var svg = d3.select("svg");
 	ws.onmessage = function (event) {
 		let data=JSON.parse(event.data);
-          console.log(data);
+
+		svg.append("circle").
+			attr("cx", Math.cos(data.direction)*data.distance+360).
+			attr("cy", Math.sin(data.direction)*data.distance+360).
+			attr("r", 5)
 	};
         </script>
     </body>

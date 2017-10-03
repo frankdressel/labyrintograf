@@ -2,12 +2,32 @@
 
 import smbus
 import math
-import time
-
+import websockets
+import asyncio
 
 import RPi.GPIO as GPIO
 import time
+import FaBo9Axis_MPU9250
 GPIO.setmode(GPIO.BCM)
+import sys
+import json
+import numpy
+
+
+class DirectionMeasurement():
+    def __init__(self):
+        self.__mpu9250 = FaBo9Axis_MPU9250.MPU9250()
+        self.__calibration={}
+        with open('calibration.json', 'r') as f:
+            self.__calibration=json.load(f)
+
+    def direction(self):
+        mag=self.__mpu9250.readMagnet()
+        x=(mag['x']+self.__calibration['xoffset'])/self.__calibration['a']
+        y=(mag['y']+self.__calibration['yoffset'])/self.__calibration['b']
+        z=(mag['z']+self.__calibration['zoffset'])/self.__calibration['c']
+
+        return math.atan2(y, x)
 
 class DistanceMeasurement():
 	def __init__(self, GPIO_TRIGGER, GPIO_ECHO):
@@ -100,23 +120,21 @@ class GyroMeasurement():
 
 distanceMeasurement=DistanceMeasurement(23, 24)
 gyroMeasurement=GyroMeasurement()
-
+directionMeasurement=DirectionMeasurement()
 
 if __name__ == '__main__':
 	try:
-		f=open('measurement.csv', 'w')
-		counter=0
+		async def data(websocket, path):
+			while True:
+				await websocket.send('{"direction":'+str(directionMeasurement.direction())+', "distance": '+str(distanceMeasurement.entfernung())+'}')
+				await asyncio.sleep(0.1)
 
-		while True:
-			start=time.time()
-			g=gyroMeasurement.gyro()
-			a=gyroMeasurement.accel()
-			print('{}, {}, {}, {}, {}, {}, {}, {}'.format(start, g['x'], g['y'], g['z'], a['x'], a['y'], a['z'], distanceMeasurement.entfernung()), file=f)
-			counter=counter+1
-			print(counter)
+		start_server = websockets.serve(data, '', 5678)
+
+		asyncio.get_event_loop().run_until_complete(start_server)
+		asyncio.get_event_loop().run_forever()
 
 	# Programm beenden
 	except KeyboardInterrupt:
 		print("Programm abgebrochen")
-		f.close()
 		GPIO.cleanup()
